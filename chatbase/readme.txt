@@ -2,8 +2,8 @@
 Contributors: chatbase
 Tags: chatbase, chatbots, ai
 Requires at least: 4.7
-Tested up to: 6.4.2
-Stable tag: 1.0.3
+Tested up to: 6.7.2
+Stable tag: 1.0.4
 Requires PHP: 7.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -40,3 +40,8 @@ This plugin utilizes Chatbase services to deploy a pre-trained chatbot on your w
 
 = 1.0.3 =
 * Updated to latest Chatbase embed script.
+
+= 1.0.4 =
+* Improved script loading using WordPress best practices
+* Updated to latest Chatbase embed script.
+* Enhanced script placement in footer for better performance

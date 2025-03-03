@@ -4,7 +4,7 @@
  * Plugin Name: Chatbase
  * Plugin URI: https://www.chatbase.co
  * Description: Embed your Chatbase chatbot on any Wordpress site.
- * Version: 1.0.3
+ * Version: 1.0.4
  * Author: Chatbase
  * Author URI: https://www.chatbase.co/
  * License: GPL2
@@ -129,29 +129,53 @@ function chatbase_options_page()
 function chatbase_embed_chatbot()
 {
     $handle = 'chatbot-script';
-
-    $script_url = 'https://www.chatbase.co/embed.min.js';
-
     $chatbase_id = get_option('chatbase_id');
+    
+    wp_register_script($handle, '', [], '', true);
+    wp_enqueue_script($handle);
 
-    // Enqueue the script
-    wp_enqueue_script(
-        $handle,
-        $script_url,
-        array(), // Dependencies (if any)
-        null, // Version number (null for no version)
-        true // Add script in the footer
-    );
-
-    // Pass data to the script
-    wp_localize_script(
-        $handle,
-        'embeddedChatbotConfig',
-        array(
-            'chatbotId' => esc_attr($chatbase_id),
-            'domain' => 'www.chatbase.co',
-        )
-    );
+    if (empty($chatbase_id)) {
+        wp_add_inline_script($handle, 
+            'console.log("Chatbase ID is not configured. Please enter your Chatbot ID in the WordPress admin settings.");'
+        );
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Chatbase: Chatbot ID is not configured');
+        }
+        return;
+    }
+    
+    $custom_script = '(function() {
+        if (!window.chatbase || window.chatbase("getState") !== "initialized") {
+            window.chatbase = (...arguments) => {
+                if (!window.chatbase.q) {
+                    window.chatbase.q = []
+                }
+                window.chatbase.q.push(arguments)
+            };
+            window.chatbase = new Proxy(window.chatbase, {
+                get(target, prop) {
+                    if (prop === "q") {
+                        return target.q
+                    }
+                    return (...args) => target(prop, ...args)
+                }
+            })
+        }
+        const onLoad = function() {
+            const script = document.createElement("script");
+            script.src = "https://www.chatbase.co/embed.min.js";
+            script.id = "' . esc_js($chatbase_id) . '";
+            script.domain = "www.chatbase.co";
+            document.body.appendChild(script)
+        };
+        if (document.readyState === "complete") {
+            onLoad()
+        } else {
+            window.addEventListener("load", onLoad)
+        }
+    })();';
+    
+    wp_add_inline_script($handle, $custom_script);
 }
 
 add_action('wp_enqueue_scripts', 'chatbase_embed_chatbot');
